@@ -1,29 +1,18 @@
-# Build artifacts
+
 bin/
 obj/
-
-# Rider project files
 .idea/
 *.sln.iml
-
-# User-specific files
 *.user
 *.userosscache
 *.suo
 *.csproj.user
-
-# OS-specific
 .DS_Store
 Thumbs.db
-
-# Logs
 *.log
-
-# Temporary files
 *.tmp
 *.temp
 
-# VSCode or other editors (optional)
 .vscode/
 
 # dotnet CLI artifacts
@@ -31,7 +20,6 @@ project.lock.json
 project.fragment.lock.json
 artifacts/
 
-# Rider caches (safe to ignore, optional)
 .idea/
 *.sln.dotSettings
 *.idea
