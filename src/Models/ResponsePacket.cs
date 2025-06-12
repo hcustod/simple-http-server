@@ -1,6 +1,6 @@
 using System.Text;
 
-namespace simple_http_server;
+namespace simple_http_server.Models;
 
 public class ResponsePacket
 {
