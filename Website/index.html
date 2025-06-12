@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Simple Button Demo</title>
+    <link rel="stylesheet" href="styles.css">
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            const button = document.getElementById('click-me');
+            button.addEventListener('click', () => {
+                alert("I've been clicked!");
+            });
+        });
+    </script>
+</head>
+<body>
+<div class="center">
+    <input type="button" id="click-me" value="Click Me" />
+</div>
+</body>
+</html>

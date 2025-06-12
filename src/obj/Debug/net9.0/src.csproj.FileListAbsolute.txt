@@ -12,3 +12,4 @@
 /Users/hcustodio/Projects/simple-http-server/src/obj/Debug/net9.0/src.pdb
 /Users/hcustodio/Projects/simple-http-server/src/obj/Debug/net9.0/src.genruntimeconfig.cache
 /Users/hcustodio/Projects/simple-http-server/src/obj/Debug/net9.0/ref/src.dll
+/Users/hcustodio/Projects/simple-http-server/src/obj/Debug/net9.0/src.sourcelink.json

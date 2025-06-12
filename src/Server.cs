@@ -13,14 +13,16 @@ namespace simple_http_server;
 public class Server
 {
     private static TcpListener listener;
-    private static int maxConConnections = 20;
-    private static Semaphore sem = new Semaphore(maxConConnections, maxConConnections);
-    private static Router router; 
+    private static readonly int MaxConnections = 20;
+    private static readonly Semaphore Semaphore = new(MaxConnections, MaxConnections);
+    private static Router router;
 
     public static void Start()
     {
-        // Log all local IP's
-        var websitePath = GetWebsitePath();
+        // Determine and print local IPs
+        string websitePath = GetWebsitePath();
+        Console.WriteLine("Website path resolved to: " + websitePath);
+
         router = new Router { WebsitePath = websitePath };
 
         var localIPs = GetAllLocalHost();
@@ -28,41 +30,45 @@ public class Server
         {
             Console.WriteLine($"Will be listening on http://{ip}:8080/");
         }
-        
+
         listener = new TcpListener(IPAddress.Any, 8080);
         listener.Start();
-        
-        Console.WriteLine("Server started");
-        foreach (var ip in localIPs)
-        {
-            Console.WriteLine($"Listening on {ip} :8080");
-        }
-        
-        Task.Run(() => RunServer());
+
+        Console.WriteLine("Server started.");
+
+        Task.Run(RunServer);
     }
 
     private static string GetWebsitePath()
     {
-        var location = System.Reflection.Assembly.GetEntryAssembly().Location;
-        return Path.Combine(Directory.GetParent(location).Parent.Parent.Parent.FullName, "Website");
+        // Example: /Users/hcustodio/Projects/simple-http-server/src/bin/Debug/net8.0/
+        string exeLocation = System.Reflection.Assembly.GetEntryAssembly().Location;
+
+        // Navigate to the project root
+        string projectRoot = Directory.GetParent(exeLocation).Parent.Parent.Parent.Parent.FullName;
+
+        // Combine with Website folder
+        return Path.Combine(projectRoot, "Website");
     }
 
     private static List<IPAddress> GetAllLocalHost()
     {
-        return Dns.GetHostEntry(Dns.GetHostName()).AddressList
-            .Where(ip => ip.AddressFamily == AddressFamily.InterNetwork).ToList();
+        return Dns.GetHostEntry(Dns.GetHostName())
+            .AddressList
+            .Where(ip => ip.AddressFamily == AddressFamily.InterNetwork)
+            .ToList();
     }
 
     private static void RunServer()
     {
         while (true)
         {
-            sem.WaitOne();
+            Semaphore.WaitOne();
             var client = listener.AcceptTcpClient();
             Task.Run(() =>
             {
                 HandleClient(client);
-                sem.Release();
+                Semaphore.Release();
             });
         }
     }
@@ -74,37 +80,35 @@ public class Server
         using var writer = new StreamWriter(stream) { AutoFlush = true };
 
         string requestLine = reader.ReadLine();
-        if (string.IsNullOrEmpty(requestLine))
-            return;
-        
-        Console.WriteLine($"Received: {requestLine}"); 
-        
-        var tokens = requestLine.Split(' ');
+        if (string.IsNullOrEmpty(requestLine)) return;
+
+        Console.WriteLine($"Received: {requestLine}");
+
+        string[] tokens = requestLine.Split(' ');
         if (tokens.Length < 2) return;
-        
+
         string method = tokens[0];
         string rawUrl = tokens[1];
         string path = rawUrl.Split('?')[0];
-        string queryParams = rawUrl.Contains("?") ? rawUrl.Split('?')[1] : "";
-        
-        var kvParams = new Dictionary<string, string>();
+        string queryString = rawUrl.Contains('?') ? rawUrl.Split('?')[1] : "";
+
+        var kvParams = new Dictionary<string, string>(); // Extend if needed to parse query string
 
         var responsePacket = router.Route(method, path, kvParams);
-        
+
         if (responsePacket != null)
         {
             string headers = $"HTTP/1.1 200 OK\r\nContent-Type: {responsePacket.ContentType}\r\nContent-Length: {responsePacket.Data.Length}\r\n\r\n";
-            writer.Write(Encoding.UTF8.GetBytes(headers));
-            writer.Write(responsePacket.Data);
+            stream.Write(Encoding.UTF8.GetBytes(headers));
+            stream.Write(responsePacket.Data);
         }
         else
         {
             string notFound = "<html><body><h1>404 - Not Found</h1></body></html>";
             string headers = "HTTP/1.1 404 Not Found\r\nContent-Type: text/html\r\n" +
                              $"Content-Length: {Encoding.UTF8.GetByteCount(notFound)}\r\n\r\n";
-            writer.Write(Encoding.UTF8.GetBytes(headers));
-            writer.Write(Encoding.UTF8.GetBytes(notFound));
+            stream.Write(Encoding.UTF8.GetBytes(headers));
+            stream.Write(Encoding.UTF8.GetBytes(notFound));
         }
     }
-    
 }

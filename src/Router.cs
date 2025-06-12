@@ -1,22 +1,21 @@
-using System.Runtime.InteropServices;
 using System.Text;
 using simple_http_server.Models;
+using simple_http_server.Helpers;
 using static simple_http_server.Helpers.Loaders;
 
 namespace simple_http_server;
 
-using System.Net;
-using System.Net.Sockets;
-using System.Threading;
-
 public class Router
 {
     public string WebsitePath { get; set; }
-    
+
     private Dictionary<string, ExtensionInfo> extFolderMap;
-    
+
     public Router()
     {
+        // Assign this router instance to the loader
+        Loaders.router = this;
+
         extFolderMap = new Dictionary<string, ExtensionInfo>()
         {
             { "ico", new ExtensionInfo() { Loader = ImageLoader, ContentType = "image/x-icon" } },
@@ -36,18 +35,13 @@ public class Router
         string ext = Path.GetExtension(path).TrimStart('.').ToLower();
         string cleanPath = path.TrimStart('/');
 
-        // Unknown extension or type 
+        // Use fallback content type and loader if extension is unknown
         if (!extFolderMap.TryGetValue(ext, out ExtensionInfo extInfo))
         {
-            return new ResponsePacket
-            {
-                Data = Encoding.UTF8.GetBytes("<h1> 404 not found </h1>"),
-                ContentType = "text/html",
-                Encoding = Encoding.UTF8
-            };
+            extInfo = extFolderMap[""];
         }
 
-        string fullpath = Path.Combine(WebsitePath, cleanPath);
-        return extInfo.Loader(fullpath, ext, extInfo);
+        string fullPath = Path.Combine(WebsitePath, cleanPath);
+        return extInfo.Loader(fullPath, ext, extInfo);
     }
 }
